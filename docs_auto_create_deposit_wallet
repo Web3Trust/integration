@@ -1,0 +1,141 @@
+## Fireblocks Address Management Script
+
+### Overview
+This script connects to the Fireblocks platform via its SDK to:
+1. **Retrieve all vault deposit addresses** created in the last 24 hours.
+2. **Automatically generate two new addresses** — `deposit_front` and `quarantine` — for each new deposit address, used for routing or isolating incoming funds.
+
+---
+
+### Dependencies
+- `fireblocks_sdk`: Official Python SDK to interact with the Fireblocks API.
+- `datetime`: To handle time filtering.
+- `os`: Used to handle file paths and environment variables (though not utilized deeply in this script).
+
+Install the Fireblocks SDK:
+```bash
+pip install fireblocks-sdk
+```
+
+---
+
+### Configuration
+
+```python
+API_SECRET_PATH = "path_to_your_private_key.pem"
+API_KEY = "your_fireblocks_api_key_here"
+```
+
+- `API_SECRET_PATH`: File path to your **Fireblocks RSA private key** in PEM format.
+- `API_KEY`: Fireblocks **API key** associated with your workspace.
+
+---
+
+### Function Breakdown
+
+#### `get_fireblocks_sdk()`
+
+```python
+def get_fireblocks_sdk():
+    with open(API_SECRET_PATH, "r") as key_file:
+        private_key = key_file.read()
+    return FireblocksSDK(private_key, API_KEY)
+```
+
+- Reads the Fireblocks private key file.
+- Initializes and returns a Fireblocks SDK client object using the key and API token.
+
+---
+
+#### `get_recent_deposit_addresses(fireblocks)`
+
+```python
+def get_recent_deposit_addresses(fireblocks):
+    ...
+```
+
+**Purpose:**  
+Scans all vault accounts and extracts deposit addresses that were created within the **last 24 hours**.
+
+**Process:**
+- Calls `get_vault_accounts()` to fetch all vaults.
+- Iterates over each vault's `assets` and their `addresses`.
+- Parses the `createdAt` timestamp and filters those newer than `24 hours ago`.
+
+**Returns:**
+- A list of dicts containing:
+  - `vault_account_id`
+  - `asset_id`
+  - `address`
+
+---
+
+#### `create_new_addresses(fireblocks, deposit_addresses)`
+
+```python
+def create_new_addresses(fireblocks, deposit_addresses):
+    ...
+```
+
+**Purpose:**  
+For every recent deposit address found, this function generates two new addresses:
+- A **`deposit_front`** address (used for routing, analytics, or fee abstraction).
+- A **`quarantine`** address (for risk containment or suspicious funds).
+
+**How:**
+- Calls `fireblocks.generate_new_address()` with a tag for each.
+
+**Prints:**
+- Confirmation of each new address creation.
+
+---
+
+#### `main()`
+
+```python
+def main():
+    ...
+```
+
+**Purpose:**  
+Coordinates the full process:
+1. Authenticates Fireblocks connection.
+2. Gathers recently created deposit addresses.
+3. Logs status.
+4. Triggers generation of `deposit_front` and `quarantine` addresses.
+
+---
+
+### ✅ Script Execution
+
+This block ensures the script runs only when called directly (not imported as a module):
+```python
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### 🧪 Example Output
+
+```
+Fetching recent deposit addresses...
+Found 3 new deposit addresses. Creating corresponding addresses...
+Created deposit_front address: 0xabc... for vault 123 and asset ETH
+Created quarantine address: 0xdef... for vault 123 and asset ETH
+...
+```
+
+---
+
+### 🔐 Security Notes
+- **NEVER hardcode API keys** or secrets in production. Consider loading them from environment variables:
+  ```python
+  API_SECRET_PATH = os.getenv("FIREBLOCKS_SECRET_PATH")
+  API_KEY = os.getenv("FIREBLOCKS_API_KEY")
+  ```
+- Restrict file permissions on the private key: `chmod 600 path_to_your_private_key.pem`
+
+---
+
+Would you like me to generate a version of this with environment variable loading and logging instead of print statements?
