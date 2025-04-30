@@ -135,7 +135,3 @@ Created quarantine address: 0xdef... for vault 123 and asset ETH
   API_KEY = os.getenv("FIREBLOCKS_API_KEY")
   ```
 - Restrict file permissions on the private key: `chmod 600 path_to_your_private_key.pem`
-
----
-
-Would you like me to generate a version of this with environment variable loading and logging instead of print statements?
