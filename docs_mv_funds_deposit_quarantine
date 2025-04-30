@@ -1,0 +1,133 @@
+## 🔁 Fireblocks Deposit-to-Quarantine Transfer Script Documentation
+
+### 📌 Purpose
+
+This script automates the **internal transfer of funds** from a wallet tagged as `deposit` to another wallet tagged as `quarantine` within the same **Vault Account** and **Asset Type** in Fireblocks. This is useful for:
+- Risk containment workflows
+- Layered wallet segregation
+- Manual or automated compliance handling
+
+---
+
+## How It Works
+
+1. **Authenticate** using your Fireblocks API key and private key.
+2. **Fetch vault account** and identify addresses tagged as:
+   - `deposit`
+   - `quarantine`
+3. **Check available balance** of the `deposit` address.
+4. **Initiate an internal transfer** to the `quarantine` address using Fireblocks' API.
+
+---
+
+## Requirements
+
+- Python 3.7+
+- Fireblocks Python SDK
+
+### Install SDK
+
+```bash
+pip install fireblocks-sdk
+```
+
+---
+
+## Configuration
+
+Open the script and edit the configuration variables:
+
+```python
+API_SECRET_PATH = "path_to_your_private_key.pem"
+API_KEY = "your_fireblocks_api_key_here"
+VAULT_ACCOUNT_ID = "123456"       # Replace with your Vault Account ID
+ASSET_ID = "ETH"                  # Replace with desired asset symbol (e.g., ETH, USDC)
+```
+
+| Variable              | Description                                      |
+|----------------------|--------------------------------------------------|
+| `API_SECRET_PATH`     | Path to your Fireblocks private key PEM file     |
+| `API_KEY`             | Your Fireblocks API key                         |
+| `VAULT_ACCOUNT_ID`    | ID of your Fireblocks vault account             |
+| `ASSET_ID`            | Symbol of the asset to move (e.g., "ETH")       |
+
+---
+
+## Script Structure
+
+### 1. `get_fireblocks_sdk()`
+
+Reads the private key and returns an authenticated `FireblocksSDK` instance.
+
+---
+
+### 2. `get_address_by_tag(fireblocks, vault_id, asset_id, tag)`
+
+Finds and returns the address for a given vault, asset, and tag (e.g., `deposit`, `quarantine`).
+
+---
+
+### 3. `get_available_balance(fireblocks, vault_id, asset_id, address)`
+
+Returns the available balance of the specified address in the vault account.
+
+---
+
+### 4. `move_funds(...)`
+
+Main logic:
+- Finds `deposit` and `quarantine` addresses.
+- Checks if the `deposit` address has a positive available balance.
+- If so, initiates a transfer to the `quarantine` address.
+- Logs the transaction ID and status.
+
+---
+
+### 5. `main()`
+
+Entry point to the script. Authenticates and calls `move_funds()`.
+
+---
+
+## How to Run
+
+Save the script (e.g., `transfer_to_quarantine.py`) and execute:
+
+```bash
+python transfer_to_quarantine.py
+```
+
+---
+
+## Example Output
+
+```
+Transfer initiated. TX ID: f36cbae2-d1e2-4c9b-8bc9-ea1f0a7786e9, Status: SUBMITTED
+```
+
+---
+
+## 🛑 Error Handling
+
+- If either address is missing or untagged:
+  ```
+  Missing address: deposit=None, quarantine=0xabc...
+  ```
+- If no funds are available:
+  ```
+  No available funds to transfer.
+  ```
+
+---
+
+## 🔐 Security Tips
+
+- Do **not hardcode** your API keys or private key paths in production. Use environment variables:
+  ```python
+  import os
+  API_SECRET_PATH = os.getenv("FIREBLOCKS_SECRET_PATH")
+  API_KEY = os.getenv("FIREBLOCKS_API_KEY")
+  ```
+- Make sure your PEM file is permission-restricted: `chmod 600 path_to_your_private_key.pem`.
+
+
