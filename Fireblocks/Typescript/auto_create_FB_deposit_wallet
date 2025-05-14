@@ -1,0 +1,105 @@
+/**
+ * ---------------------------------------------------------------------------
+ * Web3Firewall™ - Blockchain Risk & Compliance Intelligence Platform
+ * ---------------------------------------------------------------------------
+ * 
+ * Title     : Fireblocks Deposit Address Management Script
+ * Version   : 1.0
+ * Language  : TypeScript (Node.js)
+ * Author    : Web3Firewall Engineering Team
+ * License   : Proprietary - Web3Firewall™ All Rights Reserved
+ * 
+ * Description:
+ * This script connects to Fireblocks™ via its official SDK,
+ * identifies deposit addresses created within the last 24 hours,
+ * and programmatically creates "deposit_front" and "quarantine"
+ * addresses for each.
+ * 
+ * Usage of this script is provided as-is, without warranty of any kind.
+ * Web3Firewall™, its affiliates, and contributors accept no liability
+ * for damages, data loss, financial exposure, or regulatory breaches
+ * arising from the use, misuse, or inability to use this code.
+ * 
+ * You are solely responsible for reviewing, testing, and ensuring
+ * that this code meets your compliance, security, and operational needs.
+ * 
+ * ---------------------------------------------------------------------------
+ * (C) 2025 Web3Firewall™. All Rights Reserved.
+ * https://web3firewall.ai
+ * ---------------------------------------------------------------------------
+ */
+
+import { FireblocksSDK } from 'fireblocks-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// CONFIGURATION
+const API_SECRET_PATH = 'path_to_your_private_key.pem';
+const API_KEY = 'your_fireblocks_api_key_here';
+
+// Initialize Fireblocks SDK
+function getFireblocksSdk(): FireblocksSDK {
+    const privateKey = fs.readFileSync(path.resolve(API_SECRET_PATH), 'utf8');
+    return new FireblocksSDK(privateKey, API_KEY);
+}
+
+// Get deposit addresses created in the last 24 hours
+async function getRecentDepositAddresses(fireblocks: FireblocksSDK) {
+    const recentDepositAddresses: any[] = [];
+    const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const vaultAccounts = await fireblocks.getVaultAccounts();
+
+    for (const account of vaultAccounts.accounts) {
+        for (const asset of account.assets || []) {
+            for (const addressInfo of asset.addresses || []) {
+                const createdTime = new Date(addressInfo.createdAt);
+                if (createdTime >= cutoffTime) {
+                    recentDepositAddresses.push({
+                        vaultAccountId: account.id,
+                        assetId: asset.id,
+                        address: addressInfo.address,
+                    });
+                }
+            }
+        }
+    }
+
+    return recentDepositAddresses;
+}
+
+// Create 'deposit_front' and 'quarantine' addresses
+async function createNewAddresses(fireblocks: FireblocksSDK, depositAddresses: any[]) {
+    for (const deposit of depositAddresses) {
+        const { vaultAccountId, assetId } = deposit;
+
+        // Create deposit_front address
+        const depositFrontAddress = await fireblocks.generateNewAddress(vaultAccountId, assetId, { description: 'deposit_front' });
+        console.log(`Created deposit_front address: ${depositFrontAddress.address} for vault ${vaultAccountId} and asset ${assetId}`);
+
+        // Create quarantine address
+        const quarantineAddress = await fireblocks.generateNewAddress(vaultAccountId, assetId, { description: 'quarantine' });
+        console.log(`Created quarantine address: ${quarantineAddress.address} for vault ${vaultAccountId} and asset ${assetId}`);
+    }
+}
+
+// MAIN
+async function main() {
+    const fireblocks = getFireblocksSdk();
+
+    console.log('Fetching recent deposit addresses...');
+    const depositAddresses = await getRecentDepositAddresses(fireblocks);
+
+    if (depositAddresses.length === 0) {
+        console.log('No new deposit addresses found in the past 24 hours.');
+        return;
+    }
+
+    console.log(`Found ${depositAddresses.length} new deposit addresses. Creating corresponding addresses...`);
+    await createNewAddresses(fireblocks, depositAddresses);
+}
+
+// Execute script
+main().catch((error) => {
+    console.error('Error running script:', error);
+});
