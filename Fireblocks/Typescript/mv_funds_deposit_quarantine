@@ -1,0 +1,106 @@
+/**
+ * ---------------------------------------------------------------------------
+ * Web3Firewall™ - Blockchain Risk & Compliance Intelligence Platform
+ * ---------------------------------------------------------------------------
+ * 
+ * Title     : Fireblocks Internal Fund Movement Script (Deposit ➔ Quarantine)
+ * Version   : 1.0
+ * Language  : TypeScript (Node.js)
+ * Author    : Web3Firewall Engineering Team
+ * License   : Proprietary - Web3Firewall™ All Rights Reserved
+ * 
+ * Description:
+ * This script connects to Fireblocks™ via its official SDK,
+ * moves the full available balance from a vault account's deposit
+ * address to a quarantine address using tagged address selection.
+ * 
+ * Usage of this script is provided as-is, without warranty of any kind.
+ * Web3Firewall™, its affiliates, and contributors accept no liability
+ * for damages, data loss, financial exposure, or regulatory breaches
+ * arising from the use, misuse, or inability to use this code.
+ * 
+ * You are solely responsible for reviewing, testing, and ensuring
+ * that this code meets your compliance, security, and operational needs.
+ * 
+ * ---------------------------------------------------------------------------
+ * (C) 2025 Web3Firewall™. All Rights Reserved.
+ * https://web3firewall.ai
+ * ---------------------------------------------------------------------------
+ */
+
+import { FireblocksSDK, PeerType, TransactionArguments } from 'fireblocks-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// CONFIGURATION
+const API_SECRET_PATH = 'path_to_your_private_key.pem';
+const API_KEY = 'your_fireblocks_api_key_here';
+const VAULT_ACCOUNT_ID = '123456'; // Replace with your Vault account ID
+const ASSET_ID = 'ETH'; // Example: "ETH", "USDC"
+
+// Initialize Fireblocks SDK
+function getFireblocksSdk(): FireblocksSDK {
+    const privateKey = fs.readFileSync(path.resolve(API_SECRET_PATH), 'utf8');
+    return new FireblocksSDK(privateKey, API_KEY);
+}
+
+// Get address by tag (description)
+async function getAddressByTag(fireblocks: FireblocksSDK, vaultId: string, assetId: string, tag: string): Promise<string | null> {
+    const account = await fireblocks.getVaultAccountById(vaultId);
+    for (const asset of account.assets || []) {
+        if (asset.id === assetId) {
+            for (const addressInfo of asset.addresses || []) {
+                if (addressInfo.description === tag) {
+                    return addressInfo.address;
+                }
+            }
+        }
+    }
+    return null;
+}
+
+// Get available balance on asset
+async function getAvailableBalance(fireblocks: FireblocksSDK, vaultId: string, assetId: string): Promise<number> {
+    const balanceInfo = await fireblocks.getVaultAccountAsset(vaultId, assetId);
+    return parseFloat(balanceInfo.available);
+}
+
+// Move funds internally within the same vault account (deposit ➔ quarantine)
+async function moveFunds(fireblocks: FireblocksSDK, vaultId: string, assetId: string, sourceTag: string, destinationTag: string) {
+    const fromAddress = await getAddressByTag(fireblocks, vaultId, assetId, sourceTag);
+    const toAddress = await getAddressByTag(fireblocks, vaultId, assetId, destinationTag);
+
+    if (!fromAddress || !toAddress) {
+        console.error(`Missing address: deposit=${fromAddress}, quarantine=${toAddress}`);
+        return;
+    }
+
+    const availableBalance = await getAvailableBalance(fireblocks, vaultId, assetId);
+
+    if (availableBalance <= 0) {
+        console.log('No available funds to transfer.');
+        return;
+    }
+
+    const tx = await fireblocks.createTransaction({
+        assetId: assetId,
+        source: { type: PeerType.VAULT_ACCOUNT, id: vaultId, address: fromAddress },
+        destination: { type: PeerType.VAULT_ACCOUNT, id: vaultId, address: toAddress },
+        amount: availableBalance.toString(),
+        note: `Auto-transfer to quarantine on ${new Date().toISOString()}`,
+        extraParameters: new TransactionArguments(),
+    });
+
+    console.log(`Transfer initiated. TX ID: ${tx.id}, Status: ${tx.status}`);
+}
+
+// MAIN
+async function main() {
+    const fireblocks = getFireblocksSdk();
+    await moveFunds(fireblocks, VAULT_ACCOUNT_ID, ASSET_ID, 'deposit', 'quarantine');
+}
+
+// Execute
+main().catch((error) => {
+    console.error('Error running script:', error);
+});
