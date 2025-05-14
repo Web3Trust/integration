@@ -1,3 +1,35 @@
+"""
+----------------------------------------------------------------------------
+ Web3Firewall™ - Blockchain Risk & Compliance Intelligence Platform
+----------------------------------------------------------------------------
+
+ Title     : Fireblocks Internal Fund Movement Script (Deposit ➔ Quarantine)
+ Version   : 1.0
+ Language  : Python 3.x
+ Author    : Web3Firewall Engineering Team
+ License   : Proprietary - Web3Firewall™ All Rights Reserved
+
+ Description:
+ This script connects to Fireblocks™ via its official SDK,
+ moves the full available balance from a vault account's deposit
+ address to a quarantine address using tagged address selection.
+
+ Disclaimer:
+ Usage of this script is provided "AS IS" without warranty of any kind.
+ Web3Firewall™, its affiliates, and contributors accept no liability
+ for any damages, data loss, financial exposure, or regulatory breaches
+ arising from the use, misuse, or inability to use this code.
+
+ You are solely responsible for reviewing, testing, and ensuring
+ that this code meets your compliance, security, and operational needs.
+
+----------------------------------------------------------------------------
+ (C) 2025 Web3Firewall™. All Rights Reserved.
+ https://web3firewall.ai
+----------------------------------------------------------------------------
+"""
+
+
 from fireblocks_sdk import FireblocksSDK
 import os
 
