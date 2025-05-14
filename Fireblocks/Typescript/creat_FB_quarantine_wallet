@@ -1,0 +1,78 @@
+/**
+ * ---------------------------------------------------------------------------
+ * Web3Firewall™ - Blockchain Risk & Compliance Intelligence Platform
+ * ---------------------------------------------------------------------------
+ * 
+ * Title     : Fireblocks Quarantine ETH Address Provisioning Script
+ * Version   : 1.0
+ * Language  : TypeScript (Node.js)
+ * Author    : Web3Firewall Engineering Team
+ * License   : Proprietary - Web3Firewall™ All Rights Reserved
+ * 
+ * Description:
+ * This script connects to Fireblocks™ via its official SDK,
+ * creates a dedicated Vault account, adds an Ethereum wallet,
+ * and retrieves the primary address to be used as a quarantine
+ * address for client-specific risk mitigation purposes.
+ * 
+ * Usage of this script is provided as-is, without warranty of any kind.
+ * Web3Firewall™, its affiliates, and contributors accept no liability
+ * for damages, data loss, financial exposure, or regulatory breaches
+ * arising from the use, misuse, or inability to use this code.
+ * 
+ * You are solely responsible for reviewing, testing, and ensuring
+ * that this code meets your compliance, security, and operational needs.
+ * 
+ * ---------------------------------------------------------------------------
+ * (C) 2025 Web3Firewall™. All Rights Reserved.
+ * https://web3firewall.ai
+ * ---------------------------------------------------------------------------
+ */
+
+import { FireblocksSDK } from 'fireblocks-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// --- Configuration ---
+const API_KEY = ''; // Replace with your Fireblocks API key
+const API_SECRET_PATH = '/path/to/your/fireblocks_secret.key'; // Replace with your private key PEM file path
+const VAULT_NAME = 'My ETH Vault'; // Specify the vault name for the quarantine account
+const ASSET_ID = 'ETH'; // Ethereum asset ID
+const DEPOSIT_DESC = 'Client A ETH quarantine address';
+
+// --- Initialize Fireblocks SDK ---
+function getFireblocksSdk(): FireblocksSDK {
+    const privateKey = fs.readFileSync(path.resolve(API_SECRET_PATH), 'utf8');
+    return new FireblocksSDK(privateKey, API_KEY);
+}
+
+// --- Main Flow ---
+async function main() {
+    const fireblocks = getFireblocksSdk();
+
+    // Step 1: Create Vault Account
+    console.log('Creating quarantine vault account...');
+    const vaultAccount = await fireblocks.createVaultAccount(VAULT_NAME, { hiddenOnUI: false });
+    const vaultAccountId = vaultAccount.id;
+    console.log(`Vault Account Created: ID = ${vaultAccountId}`);
+
+    // Step 2: Add ETH Wallet to Vault Account
+    console.log(`Adding ${ASSET_ID} wallet to vault account...`);
+    await fireblocks.createVaultAsset(vaultAccountId, ASSET_ID);
+    console.log(`${ASSET_ID} Wallet added to Vault Account ${vaultAccountId}`);
+
+    // Step 3: Retrieve the deposit (quarantine) address
+    console.log('Retrieving ETH quarantine address...');
+    const addresses = await fireblocks.getDepositAddresses(vaultAccountId, ASSET_ID);
+
+    if (addresses.length > 0) {
+        console.log(`ETH Quarantine Address: ${addresses[0].address}`);
+    } else {
+        console.log('No quarantine address found — wallet creation may still be processing.');
+    }
+}
+
+// Execute script
+main().catch((error) => {
+    console.error('Error running script:', error);
+});
