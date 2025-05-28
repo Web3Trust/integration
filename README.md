@@ -1,5 +1,3 @@
-# integration
-
 # Web3Firewall Risk Monitor Integrations
 
 This repository contains official scripts, tools, and integration examples for clients of [Web3Firewall](https://web3firewall.xyz) — the real-time risk intelligence platform for blockchain transactions.
