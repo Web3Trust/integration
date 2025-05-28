@@ -5,7 +5,7 @@ Web3Firewall Client Script
 
 This script is part of the official integration suite for Web3Firewall clients.
 It allows you to submit Ethereum transactions to the Web3Firewall API for
-broadcast-time risk evaluation.
+broadcasted risk evaluation.
 
 You must have:
 - An active Web3Firewall account
