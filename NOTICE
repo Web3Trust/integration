@@ -1,0 +1,7 @@
+This software is maintained by Web3Firewall (https://web3firewall.xyz).
+It includes code to evaluate Ethereum transaction risk using the
+Web3Firewall Oracle API, and is provided for educational, auditing,
+and research purposes.
+
+You are responsible for your own use of this code. Web3Firewall does not
+guarantee results or legal compliance from its output.
